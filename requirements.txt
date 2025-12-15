@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+
+#Для тестов?
+behave
+requests
