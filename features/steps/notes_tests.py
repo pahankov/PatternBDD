@@ -61,7 +61,6 @@ def check_status_422(context):
 def check_status_404(context):
     assert context.response.status_code == 404
 
-
 # Проверить ID
 @then('в ответе есть ID')
 def check_id_in_response(context):
@@ -135,7 +134,6 @@ def update_note_valid_id(context):
         json=new_data
     )
     context.new_note_data = new_data
-
 
 # Проверка заметки после обновления
 @then('заметка обновлена с новыми данными')
