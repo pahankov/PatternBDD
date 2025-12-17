@@ -1,12 +1,15 @@
 from behave import given, when, then
-import requests
+# import requests
+from PageObject import NoteAPI
+
+api = NoteAPI()
 
 # ========== ФУНКЦИИ ==========
 
 # Создать валидную заметку
 def create_test_valid_note_data():
     return {
-        "title": "Test Note",
+        "title": "Test note",
         "content": "Test content"
     }
 
@@ -15,14 +18,14 @@ def create_test_invalid_note_data():
      return {#"title": "Test Note",
             "content": "Test"}
 
-# Отправить запрос создания
-def send_test_note_data(data):
-    return requests.post("http://127.0.0.1:8000/notes",
-                         json=data)
-
-# Получить все заметки
-def get_all_note_data():
-    return requests.get("http://127.0.0.1:8000/notes")
+# # Отправить запрос создания
+# def send_test_note_data(data):
+#     return requests.post("http://127.0.0.1:8000/notes",
+#                          json=data)
+#
+# # Получить все заметки
+# def get_all_note_data():
+#     return requests.get("http://127.0.0.1:8000/notes")
 
 # ========== ШАГИ ==========
 
@@ -39,12 +42,17 @@ def invalid_note_data(context):
 # Создать заметку
 @when('создаю заметку')
 def create_note(context):
-    context.response = send_test_note_data(context.note_data)
+#    context.response = send_test_note_data(context.note_data)
+    data = context.note_data
+    title = data.get("title")
+    content = data.get("content", "")
+    context.response = api.create_note(title, content)
 
 # Получить все заметки
 @when('запрашиваю все заметки')
 def request_all_note_data(context):
-    context.response = get_all_note_data()
+#    context.response = get_all_note_data()
+    context.response = api.get_all_notes()
 
 # Проверить статус 200
 @then('статус ответа 200')
@@ -82,44 +90,51 @@ def get_non_empty_list(context):
 @given('в системе есть заметка')
 def note_availability(context):
     data = create_test_valid_note_data()
-    response = send_test_note_data(data)
+#    response = send_test_note_data(data)
+    response = api.create_note(data["title"], data["content"])
     context.note_id = response.json()["id"]
 
 # Получения заметки по ID
 @when('запрашиваю заметку по её ID')
 def get_note_by_valid_id(context):
     note_id = context.note_id
-    context.response = requests.get(f"http://127.0.0.1:8000/notes/{note_id}")
+#    context.response = requests.get(f"http://127.0.0.1:8000/notes/{note_id}")
+    context.response = api.get_note_by_id(note_id)
 
 # Запрос заметки по несуществующему ID
 @when('запрашиваю заметку по несуществующему ID')
 def get_note_by_invalid_id(context):
-    context.response = requests.get("http://127.0.0.1:8000/notes/999999999999")
+#    context.response = requests.get("http://127.0.0.1:8000/notes/999999999999")
+    context.response = api.get_note_by_id(999999999999)
 
 # Удаление заметки по валидному id
 @when('удаляю заметку по валидному id')
 def delete_note_valid_id(context):
-    note_id = context.note_id
-    context.response = requests.delete(f"http://127.0.0.1:8000/notes/{note_id}")
+#    note_id = context.note_id
+#    context.response = requests.delete(f"http://127.0.0.1:8000/notes/{note_id}")
+    context.response = api.delete_note(context.note_id)
 
 # Проверка статуса 404 после удаления
 @then('при попытке получить заметку статус ответа 404')
 def check_status_404_after_delete(context):
     note_id = context.note_id
-    response = requests.get(f"http://127.0.0.1:8000/notes/{note_id}")
+#    response = requests.get(f"http://127.0.0.1:8000/notes/{note_id}")
+    response = api.get_note_by_id(note_id)
     assert response.status_code == 404
 
 # Удаление заметки по не валидному id
 @when('удаляю заметку по не валидному id')
 def delete_note_invalid_id(context):
-    context.response = requests.delete("http://127.0.0.1:8000/notes/999999999999999")
+#    context.response = requests.delete("http://127.0.0.1:8000/notes/999999999999999")
+    context.response = api.delete_note(999999999999)
 
 # Очистка всех заметок
 @given('в системе нет заметок')
 def delete_all_notes(context):
-    notes = requests.get("http://127.0.0.1:8000/notes").json()
-    for note in notes:
-        requests.delete(f"http://127.0.0.1:8000/notes/{note['id']}")
+    # notes = requests.get("http://127.0.0.1:8000/notes").json()
+    # for note in notes:
+    #     requests.delete(f"http://127.0.0.1:8000/notes/{note['id']}")
+    api.clear_all_notes()
 
 # Обновление заметки по валидному ID
 @when('обновляю заметку с новыми данными по валидному id')
@@ -129,9 +144,12 @@ def update_note_valid_id(context):
         "title": "New Title",
         "content": "New Content"
     }
-    context.response = requests.put(
-        f"http://127.0.0.1:8000/notes/{note_id}",
-        json=new_data
+    # context.response = (requests.put(f"http://127.0.0.1:8000/notes/{note_id}",
+    #     json=new_data))
+    context.response = api.update_note(
+        note_id,
+        new_data["title"],
+        new_data["content"]
     )
     context.new_note_data = new_data
 
@@ -139,7 +157,8 @@ def update_note_valid_id(context):
 @then('заметка обновлена с новыми данными')
 def check_note_new_data(context):
     note_id = context.note_id
-    response = requests.get(f"http://127.0.0.1:8000/notes/{note_id}")
+#    response = requests.get(f"http://127.0.0.1:8000/notes/{note_id}")
+    response = api.get_note_by_id(note_id)
     data = response.json()
     assert data["title"] == "New Title"
     assert data["content"] == "New Content"
@@ -151,8 +170,12 @@ def update_note_invalid_id(context):
         "title": "New Title",
         "content": "New Content"
     }
-    context.response = requests.put(
-        "http://127.0.0.1:8000/notes/999999999999999",
-        json=new_data
+    # context.response = requests.put(
+    #     "http://127.0.0.1:8000/notes/999999999999999",
+    #     json=new_data
+    # )
+    context.response = api.update_note(999999999999,
+        new_data["title"],
+        new_data["content"]
     )
 
