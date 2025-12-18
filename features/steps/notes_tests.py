@@ -1,6 +1,7 @@
 from behave import given, when, then
 # import requests
 from PageObject import NoteAPI
+from patterns.factory import NoteFactory
 
 api = NoteAPI()
 
@@ -8,15 +9,17 @@ api = NoteAPI()
 
 # Создать валидную заметку
 def create_test_valid_note_data():
-    return {
-        "title": "Test note",
-        "content": "Test content"
-    }
+    # return {
+    #     "title": "Test note",
+    #     "content": "Test content"
+    # }
+    return NoteFactory.create_valid_note()
 
 # Создать невалидную заметку
 def create_test_invalid_note_data():
-     return {#"title": "Test Note",
-            "content": "Test"}
+     # return {#"title": "Test Note",
+     #        "content": "Test"}
+    return NoteFactory.create_invalid_note()
 
 # # Отправить запрос создания
 # def send_test_note_data(data):
